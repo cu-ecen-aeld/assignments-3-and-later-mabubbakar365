@@ -50,6 +50,19 @@ bool do_system(const char *cmd)
 *   by the command issued in @param arguments with the specified arguments.
 */
 
+/**
+* @param count -The numbers of variables passed to the function. The variables are command to execute.
+*   followed by arguments to pass to the command
+*   Since exec() does not perform path expansion, the command to execute needs
+*   to be an absolute path.
+* @param ... - A list of 1 or more arguments after the @param count argument.
+*   The first is always the full path to the command to execute with execv()
+*   The remaining arguments are a list of arguments to pass to the command in execv()
+* @return true if the command @param ... with arguments @param arguments were executed successfully
+*   using the execv() call, false if an error occurred, either in invocation of the
+*   fork, waitpid, or execv() command, or if a non-zero return value was returned
+*   by the command issued in @param arguments with the specified arguments.
+*/
 bool do_exec(int count, ...)
 {
     va_list args;
@@ -78,18 +91,11 @@ bool do_exec(int count, ...)
     pid_t pid;
 
     pid = fork();
-    if(pid == -1)
-    {
-        return false;
-    }
+    // printf("PID: %d\n", pid);
+    if(pid == -1) return false;
 
     else if (pid == 0)
-    {
-        if(command[0][0] != '/') 
-        {
-            return false;
-        }
-    
+    {    
         execv(command[0], command);
         exit(-1);
     }
@@ -99,15 +105,27 @@ bool do_exec(int count, ...)
         return false;
     }
 
-    else if(WIFEXITED(status))
+    va_end(args);
+    
+    if(WIFEXITED(status))
     {
-        printf("%d\n", WEXITSTATUS(status));
-        return WEXITSTATUS(status) == 0 ? true : false;
+        if(WEXITSTATUS(status) == 0)
+        {
+            return true; 
+        }
+
+        else
+        {
+            return false;
+        }
     }
 
-    va_end(args);
+    else
+    {
+        return false;
+    }
 
-    return false;
+    // return WIFEXITED(status) && (WEXITSTATUS(status) == 0);
 }
 
 /**
@@ -128,9 +146,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
-
-
+    // command[count] = command[count];
 /*
  * TODO
  *   Call execv, but first using https://stackoverflow.com/a/13784315/1446624 as a refernce,
@@ -156,10 +172,6 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         }
         else
         {
-            if(command[0][0] != '/')
-            {
-                return false;
-            } 
             execv(command[0], command);
             exit(-1);
         }
@@ -170,13 +182,24 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         return false;
     }
 
-    else if(WIFEXITED(status))
+    if(WIFEXITED(status))
     {
-        printf("%d\n", WEXITSTATUS(status));
-        return WEXITSTATUS(status) == 0 ? true : false;
+        if(WEXITSTATUS(status) == 0)
+        {
+            return true; 
+        }
+
+        else
+        {
+            return false;
+        }
+    }
+
+    else
+    {
+        return false;
     }
 
     va_end(args);
 
-    return false;
 }

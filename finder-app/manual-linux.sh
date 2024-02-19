@@ -12,7 +12,8 @@ KERNEL_VERSION=v5.1.10
 BUSYBOX_VERSION=1_33_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
-CROSS_COMPILE=/home/embeddedmaster/Downloads/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
+# CROSS_COMPILE=/home/embeddedmaster/Downloads/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
+CROSS_COMPILE=aarch64-none-linux-gnu-
 
 if [ $# -lt 1 ]
 then
@@ -69,7 +70,9 @@ sudo chown -R "${CURRENT_USER}:${CURRENT_GROUP}" "${OUTDIR}/rootfs"
 cd "$OUTDIR"
 if [ ! -d "${OUTDIR}/busybox" ]
 then
-git clone https://github.com/mirror/busybox.git
+# git clone https://github.com/mirror/busybox.git
+# git clone https://github.com/mirror/busybox.git
+git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
     # TODO:  Configure busybox
@@ -78,10 +81,14 @@ else
 fi
 
 # TODO: Make and install busybox
+# sudo make distclean
 sudo make distclean
-make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE defconfig
+sudo make defconfig
+# make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE defconfig
+make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 sed -i 's/CONFIG_EXTRA_CFLAGS=""/CONFIG_EXTRA_CFLAGS="-static"/g' .config   
-sudo make -j4 CONFIG_PREFIX=${OUTDIR}/rootfs ARCH=arm64 CROSS_COMPILE=${CROSS_COMPILE} install
+# sudo make -j4 CONFIG_PREFIX=${OUTDIR}/rootfs ARCH=arm64 CROSS_COMPILE=${CROSS_COMPILE} install
+make CONFIG_PREFIX=${OUTDIR}/rootfs ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
 
 # sudo chmod +s ${OUTDIR}/rootfs/bin/busybox commented by me
 
